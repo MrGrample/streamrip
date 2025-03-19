@@ -8,6 +8,7 @@ from PIL import Image
 
 from ..client import BasicDownloadable
 from ..config import ArtworkConfig
+from ..config import Config
 from ..metadata import Covers
 
 _artwork_tempdirs: set[str] = set()
@@ -29,6 +30,7 @@ async def download_artwork(
     folder: str,
     covers: Covers,
     config: ArtworkConfig,
+    config_all: Config,
     for_playlist: bool,
 ) -> tuple[str | None, str | None]:
     """Download artwork and update passed Covers object with filepaths.
@@ -71,7 +73,7 @@ async def download_artwork(
         saved_cover_path = os.path.join(folder, "cover.jpg")
         assert l_url is not None
         downloadables.append(
-            BasicDownloadable(session, l_url, "jpg").download(
+            BasicDownloadable(session, l_url, "jpg", proxy=config_all.session.downloads.proxy).download(
                 saved_cover_path,
                 lambda _: None,
             ),
@@ -85,7 +87,7 @@ async def download_artwork(
         _artwork_tempdirs.add(embed_dir)
         embed_cover_path = os.path.join(embed_dir, f"cover{hash(embed_url)}.jpg")
         downloadables.append(
-            BasicDownloadable(session, embed_url, "jpg").download(
+            BasicDownloadable(session, embed_url, "jpg", proxy=config_all.session.downloads.proxy).download(
                 embed_cover_path,
                 lambda _: None,
             ),

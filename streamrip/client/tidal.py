@@ -48,6 +48,7 @@ class TidalClient(Client):
         self.rate_limiter = self.get_rate_limiter(
             config.session.downloads.requests_per_minute,
         )
+        self.proxy = config.session.downloads.proxy
 
     async def login(self):
         self.session = await self.get_session()
@@ -163,6 +164,7 @@ class TidalClient(Client):
         return TidalDownloadable(
             self.session,
             url=manifest["urls"][0],
+            proxy=self.proxy,
             codec=manifest["codecs"],
             encryption_key=enc_key,
             restrictions=manifest.get("restrictions"),
@@ -186,7 +188,7 @@ class TidalClient(Client):
             f"videos/{video_id}/playbackinfopostpaywall", params=params
         )
         manifest = json.loads(base64.b64decode(resp["manifest"]).decode("utf-8"))
-        async with self.session.get(manifest["urls"][0]) as resp:
+        async with self.session.get(manifest["urls"][0], proxy=self.proxy) as resp:
             available_urls = await resp.json()
         available_urls.encoding = "utf-8"
 
@@ -209,6 +211,7 @@ class TidalClient(Client):
         async with self.session.get(
             "https://api.tidal.com/v1/sessions",
             headers=headers,
+            proxy=self.proxy,
         ) as _resp:
             resp = await _resp.json()
 
@@ -318,7 +321,7 @@ class TidalClient(Client):
         :param auth:
         """
         async with self.rate_limiter:
-            async with self.session.post(url, data=data, auth=auth) as resp:
+            async with self.session.post(url, data=data, auth=auth, proxy=self.proxy) as resp:
                 return await resp.json()
 
     async def _api_request(self, path: str, params=None, base: str = BASE) -> dict:
@@ -336,7 +339,7 @@ class TidalClient(Client):
         params["limit"] = 100
 
         async with self.rate_limiter:
-            async with self.session.get(f"{base}/{path}", params=params) as resp:
+            async with self.session.get(f"{base}/{path}", params=params, proxy=self.proxy) as resp:
                 if resp.status == 404:
                     logger.warning("TIDAL: track not found", resp)
                     raise NonStreamableError("TIDAL: Track not found")

@@ -1,3 +1,6 @@
+# Default ignored files
+/shelf/
+/workspace.xml
 __pycache__
 *.egg-info
 secrets.py
@@ -8,8 +11,8 @@ test.py
 *.flac
 /Downloads
 /StreamripDownloads
-Deezer
-Yandex
+/Deezer
+/Yandex
 *.mp3
 StreamripDownloads
 *.wav

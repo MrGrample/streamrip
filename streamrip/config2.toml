@@ -1,8 +1,8 @@
 [downloads]
 # Folder where tracks are downloaded to
-folder = "D:/Projects/python/streamrip"
+folder = ""
 # Put Qobuz albums in a 'Qobuz' folder, Tidal albums in 'Tidal' etc.
-source_subdirectories = true
+source_subdirectories = false
 # Put tracks in an album with 2 or more discs into a subfolder named `Disc N` 
 disc_subdirectories = true
 # Download (and convert) tracks all at once, instead of sequentially. 
@@ -13,12 +13,10 @@ concurrency = true
 # If you have very fast internet, you will benefit from a higher value,
 # A value that is too high for your bandwidth may cause slowdowns
 # Set to -1 for no limit
-max_connections = 25
+max_connections = 6
 # Max number of API requests per source to handle per minute
 # Set to -1 for no limit
 requests_per_minute = 60
-#proxy to use
-proxy = 'http://I9Cy5m3:ZYJH7mj@178.212.138.31:59825'
 
 [qobuz]
 # 1: 320kbps MP3, 2: 16/44.1, 3: 24/<=96, 4: 24/>=96
@@ -162,7 +160,7 @@ exclude = []
 [filepaths]
 # Create folders for single tracks within the downloads directory using the folder_format
 # template
-add_singles_to_folder = true
+add_singles_to_folder = false
 # Available keys: "albumartist", "title", "year", "bit_depth", "sampling_rate",
 # "id", and "albumcomposer"
 folder_format = "{albumartist} - {title} ({year}) [{container}] [{bit_depth}B-{sampling_rate}kHz]"

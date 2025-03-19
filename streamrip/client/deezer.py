@@ -39,6 +39,7 @@ class DeezerClient(Client):
         self.client = deezer.Deezer()
         self.logged_in = False
         self.config = config.session.deezer
+        self.proxy = config.session.downloads.proxy
 
     async def login(self):
         # Used for track downloads
@@ -188,6 +189,7 @@ class DeezerClient(Client):
 
         dl_info["url"] = url
         logger.debug("dz track info: %s", track_info)
+        dl_info['proxy'] = self.proxy
         return DeezerDownloadable(self.session, dl_info)
 
     def _get_encrypted_file_url(

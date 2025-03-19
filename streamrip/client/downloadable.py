@@ -37,7 +37,7 @@ def generate_temp_path(url: str):
     )
 
 
-async def fast_async_download(path, url, headers, callback):
+async def fast_async_download(path, url, headers, callback, proxy):
     """Synchronous download with yield for every 1MB read.
 
     Using aiofiles/aiohttp resulted in a yield to the event loop for every 1KB,
@@ -53,6 +53,7 @@ async def fast_async_download(path, url, headers, callback):
             headers=headers,
             allow_redirects=True,
             stream=True,
+            proxies={"http": proxy},
         ) as resp:
             for chunk in resp.iter_content(chunk_size=chunk_size):
                 file.write(chunk)
@@ -67,8 +68,10 @@ class Downloadable(ABC):
     session: aiohttp.ClientSession
     url: str
     extension: str
+    proxy: str
     source: str = "Unknown"
     _size_base: Optional[int] = None
+
 
     async def download(self, path: str, callback: Callable[[int], Any]):
         await self._download(path, callback)
@@ -77,7 +80,7 @@ class Downloadable(ABC):
         if hasattr(self, "_size") and self._size is not None:
             return self._size
 
-        async with self.session.head(self.url) as response:
+        async with self.session.head(self.url, proxy=self.proxy) as response:
             response.raise_for_status()
             content_length = response.headers.get("Content-Length", 0)
             self._size = int(content_length)
@@ -104,6 +107,7 @@ class BasicDownloadable(Downloadable):
         session: aiohttp.ClientSession,
         url: str,
         extension: str,
+        proxy: str,
         source: str | None = None,
     ):
         self.session = session
@@ -111,9 +115,10 @@ class BasicDownloadable(Downloadable):
         self.extension = extension
         self._size = None
         self.source: str = source or "Unknown"
+        self.proxy = proxy
 
     async def _download(self, path: str, callback):
-        await fast_async_download(path, self.url, self.session.headers, callback)
+        await fast_async_download(path, self.url, self.session.headers, callback, proxy=self.proxy)
 
 
 class DeezerDownloadable(Downloadable):
@@ -124,6 +129,7 @@ class DeezerDownloadable(Downloadable):
         self.session = session
         self.url = info["url"]
         self.source: str = "deezer"
+        self.proxy = info['proxy']
         qualities_available = [
             i for i, size in enumerate(info["quality_to_size"]) if size > 0
         ]
@@ -142,7 +148,7 @@ class DeezerDownloadable(Downloadable):
 
     async def _download(self, path: str, callback):
         # with requests.Session().get(self.url, allow_redirects=True) as resp:
-        async with self.session.get(self.url, allow_redirects=True) as resp:
+        async with self.session.get(self.url, allow_redirects=True, proxy=self.proxy) as resp:
             resp.raise_for_status()
             self._size = int(resp.headers.get("Content-Length", 0))
             if self._size < 20000 and not self.url.endswith(".jpg"):
@@ -160,7 +166,7 @@ class DeezerDownloadable(Downloadable):
             if self.is_encrypted.search(self.url) is None:
                 logger.debug(f"Deezer file at {self.url} not encrypted.")
                 await fast_async_download(
-                    path, self.url, self.session.headers, callback
+                    path, self.url, self.session.headers, callback, proxy=self.proxy
                 )
             else:
                 blowfish_key = self._generate_blowfish_key(self.id)
@@ -217,6 +223,46 @@ class DeezerDownloadable(Downloadable):
             for t in zip(md5_hash[:16], md5_hash[16:], BLOWFISH_SECRET)
         ).encode()
 
+class YandexDownloadable(Downloadable):
+    def __init__(self, session: aiohttp.ClientSession, info: dict):
+        logger.debug("Yandex info for downloadable: %s", info)
+        self.session = session
+        self.source: str = "yandex"
+        self.id = str(info["id"])
+        self.track = info["track"]
+        self.extension = "mp3"
+        self._size = None
+        self.url = None
+        self.proxy = info['proxy']
+
+    async def size(self) -> int:
+        return 0
+
+    async def _download(self, path: str, callback):
+        try:
+            # Получаем информацию о вариантах загрузки трека
+            track_id = self.id
+            track = self.track
+            # track_info = YANDEX_CLIENT.tracks_download_info(track_id)
+            # print(track_info)
+
+            print(path)
+
+            # Скачиваем лучший битрейт, если 320 недоступен, то качаем 192. Если 192 нет, то вообще не качаем
+            bitrates = [320, 192]
+            for bitrate in bitrates:
+                try:
+                    await asyncio.to_thread(track.download, path, 'mp3', bitrate)
+                    logger.info(f"Трек {track_id} скачан с битрейтом {bitrate} kbps как {path}")
+                    return True
+                except Exception as e:
+                    logger.error(f"Ошибка при загрузке трека {track_id}: {e}")
+                    return False
+
+        except Exception as e:
+            logger.error(f"Ошибка при загрузке трека {track_id}: {e}")
+            return False
+            # raise Exception(f"Ошибка при загрузке трека: {e}")
 
 class TidalDownloadable(Downloadable):
     """A wrapper around BasicDownloadable that includes Tidal-specific
@@ -228,11 +274,13 @@ class TidalDownloadable(Downloadable):
         session: aiohttp.ClientSession,
         url: str | None,
         codec: str,
+        proxy: str,
         encryption_key: str | None,
         restrictions,
     ):
         self.session = session
         self.source = "tidal"
+        self.proxy = proxy
         codec = codec.lower()
         if codec in ("flac", "mqa"):
             self.extension = "flac"
@@ -251,7 +299,7 @@ class TidalDownloadable(Downloadable):
             )
         self.url = url
         self.enc_key = encryption_key
-        self.downloadable = BasicDownloadable(session, url, self.extension, "tidal")
+        self.downloadable = BasicDownloadable(session, url, self.extension, self.proxy, "tidal")
 
     async def _download(self, path: str, callback):
         await self.downloadable._download(path, callback)
@@ -305,7 +353,6 @@ class TidalDownloadable(Downloadable):
             dec_bytes = decryptor.decrypt(await enc_file.read())
             return dec_bytes
 
-
 class SoundcloudDownloadable(Downloadable):
     def __init__(self, session, info: dict):
         self.session = session
@@ -318,6 +365,7 @@ class SoundcloudDownloadable(Downloadable):
         else:
             raise Exception(f"Invalid file type: {self.file_type}")
         self.url = info["url"]
+        self.proxy = info["proxy"]
 
     async def _download(self, path, callback):
         if self.file_type == "mp3":
@@ -327,7 +375,7 @@ class SoundcloudDownloadable(Downloadable):
 
     async def _download_original(self, path: str, callback):
         downloader = BasicDownloadable(
-            self.session, self.url, "flac", source="soundcloud"
+            self.session, self.url, "flac", self.proxy, source="soundcloud"
         )
         await downloader.download(path, callback)
         self.size = downloader.size
@@ -336,7 +384,7 @@ class SoundcloudDownloadable(Downloadable):
 
     async def _download_mp3(self, path: str, callback):
         # TODO: make progress bar reflect bytes
-        async with self.session.get(self.url) as resp:
+        async with self.session.get(self.url, proxy=self.proxy) as resp:
             content = await resp.text("utf-8")
 
         parsed_m3u = m3u8.loads(content)
@@ -355,7 +403,7 @@ class SoundcloudDownloadable(Downloadable):
 
     async def _download_segment(self, segment_uri: str) -> str:
         tmp = generate_temp_path(segment_uri)
-        async with self.session.get(segment_uri) as resp:
+        async with self.session.get(segment_uri, proxy=self.proxy) as resp:
             resp.raise_for_status()
             async with aiofiles.open(tmp, "wb") as file:
                 content = await resp.content.read()
@@ -364,7 +412,7 @@ class SoundcloudDownloadable(Downloadable):
 
     async def size(self) -> int:
         if self.file_type == "mp3":
-            async with self.session.get(self.url) as resp:
+            async with self.session.get(self.url,proxy=self.proxy) as resp:
                 content = await resp.text("utf-8")
 
             parsed_m3u = m3u8.loads(content)
@@ -432,3 +480,4 @@ async def concat_audio_files(paths: list[str], out: str, ext: str, max_files_ope
 
     # Recurse on remaining batches
     await concat_audio_files(outpaths, out, ext)
+

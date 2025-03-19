@@ -34,7 +34,6 @@ class SoundcloudClient(Client):
         self.rate_limiter = self.get_rate_limiter(
             config.session.downloads.requests_per_minute,
         )
-        self.proxy = config.session.downloads.proxy
 
     async def login(self):
         self.session = await self.get_session()
@@ -131,7 +130,7 @@ class SoundcloudClient(Client):
         resp_json, status = await self._request(download_info)
         return SoundcloudDownloadable(
             self.session,
-            {"url": resp_json["url"], "type": "mp3", "proxy": self.proxy},
+            {"url": resp_json["url"], "type": "mp3"},
         )
 
     async def resolve_url(self, url: str) -> dict:
@@ -238,7 +237,7 @@ class SoundcloudClient(Client):
             _params.update(params)
 
         logger.debug(f"Requesting {url} with {_params=}, {headers=}")
-        async with self.session.get(url, params=_params, headers=headers, proxy=self.proxy) as resp:
+        async with self.session.get(url, params=_params, headers=headers) as resp:
             return await resp.json(), resp.status
 
     async def _request_body(self, url, params=None, headers=None):
@@ -251,7 +250,7 @@ class SoundcloudClient(Client):
         if params is not None:
             _params.update(params)
 
-        async with self.session.get(url, params=_params, headers=headers, proxy=self.proxy) as resp:
+        async with self.session.get(url, params=_params, headers=headers) as resp:
             return await resp.content.read(), resp.status
 
     async def _announce_success(self):
@@ -261,7 +260,7 @@ class SoundcloudClient(Client):
 
     async def _refresh_tokens(self) -> tuple[str, str]:
         """Return a valid client_id, app_version pair."""
-        async with self.session.get(STOCK_URL, proxy=self.proxy) as resp:
+        async with self.session.get(STOCK_URL) as resp:
             page_text = await resp.text(encoding="utf-8")
 
         *_, client_id_url_match = re.finditer(
@@ -282,7 +281,7 @@ class SoundcloudClient(Client):
             raise Exception("Could not find app version in %s" % client_id_url_match)
         app_version = app_version_match.group(1)
 
-        async with self.session.get(client_id_url, proxy=self.proxy) as resp:
+        async with self.session.get(client_id_url) as resp:
             page_text2 = await resp.text(encoding="utf-8")
 
         client_id_match = re.search(r'client_id:\s*"(\w+)"', page_text2)

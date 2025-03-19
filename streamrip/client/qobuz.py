@@ -145,7 +145,6 @@ class QobuzClient(Client):
             config.session.downloads.requests_per_minute,
         )
         self.secret: Optional[str] = None
-        self.proxy = config.session.downloads.proxy
 
     async def login(self):
         self.session = await self.get_session()
@@ -322,7 +321,7 @@ class QobuzClient(Client):
             raise NonStreamableError
 
         return BasicDownloadable(
-            self.session, stream_url, "flac" if quality > 1 else "mp3", source="qobuz", proxy=self.proxy
+            self.session, stream_url, "flac" if quality > 1 else "mp3", source="qobuz"
         )
 
     async def _paginate(
@@ -430,7 +429,7 @@ class QobuzClient(Client):
         url = f"{QOBUZ_BASE_URL}/{epoint}"
         logger.debug("api_request: endpoint=%s, params=%s", epoint, params)
         async with self.rate_limiter:
-            async with self.session.get(url, params=params, proxy=self.proxy) as response:
+            async with self.session.get(url, params=params) as response:
                 return response.status, await response.json()
 
     @staticmethod

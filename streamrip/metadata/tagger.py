@@ -111,8 +111,6 @@ class Container(Enum):
                 return ID3(path)
             except ID3NoHeaderError:
                 return ID3()
-            except Exception as e:
-                return ID3()
         # unreachable
         return {}
 

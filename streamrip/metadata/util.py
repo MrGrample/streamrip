@@ -3,18 +3,10 @@ from typing import Optional, Type, TypeVar
 
 
 def get_album_track_ids(source: str, resp) -> list[str]:
-    if source != "yandex":
-        tracklist = resp["tracks"]
-        if source == "qobuz":
-            tracklist = tracklist["items"]
-        return [track["id"] for track in tracklist]
-    else:
-        volumes = resp['volumes']
-        tracklist = []
-        for volume in volumes:
-            for track in volume:
-                tracklist.append(track)
-        return [track["id"] for track in tracklist]
+    tracklist = resp["tracks"]
+    if source == "qobuz":
+        tracklist = tracklist["items"]
+    return [track["id"] for track in tracklist]
 
 
 def safe_get(dictionary, *keys, default=None):

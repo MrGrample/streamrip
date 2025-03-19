@@ -23,7 +23,5 @@ class ArtistMetadata:
             return cls(resp["name"], [a["id"] for a in resp["albums"]])
         elif source == "deezer":
             return cls(resp["name"], [a["id"] for a in resp["albums"]])
-        elif source == 'yandex':
-            return cls(resp["name"], [a["id"] for a in resp["albums"]])
         else:
             raise NotImplementedError

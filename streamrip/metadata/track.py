@@ -216,54 +216,6 @@ class TrackMetadata:
         )
 
     @classmethod
-    def from_yandex(cls, album: AlbumMetadata, track) -> TrackMetadata:
-
-        item_id = track['yandex.track_id']
-        title = track['yandex.track_metadata']['title']
-
-        artists = track['yandex.track_metadata'].get("artists")
-        if len(artists) > 0:
-            artist = ", ".join(a["name"] for a in artists)
-        else:
-            artist = track['yandex.track_metadata']["artist"]["name"]
-
-        tracknumber = track['yandex.track_metadata']['albums'][0]['track_position']['index']
-        discnumber = track['yandex.track_metadata']['albums'][0]['track_position']['volume']
-
-        isrc = None
-
-        quality = 2
-        bit_depth = 16
-        sampling_rate = 44.1
-
-        lyrics = track.get("yandex.lyrics_text")
-
-        if ("explicit" == track['yandex.track_metadata']['content_warning']):
-            explicit = True
-        else:
-            explicit = False
-
-        info = TrackInfo(
-            id=item_id,
-            quality=quality,
-            bit_depth=bit_depth,
-            explicit=explicit,
-            sampling_rate=sampling_rate,
-            work=None,
-        )
-        return cls(
-            info=info,
-            title=title,
-            album=album,
-            artist=artist,
-            tracknumber=tracknumber,
-            discnumber=discnumber,
-            composer=None,
-            isrc=isrc,
-            lyrics=lyrics
-        )
-
-    @classmethod
     def from_resp(cls, album: AlbumMetadata, source, resp) -> TrackMetadata | None:
         if source == "qobuz":
             return cls.from_qobuz(album, resp)
@@ -273,8 +225,6 @@ class TrackMetadata:
             return cls.from_soundcloud(album, resp)
         if source == "deezer":
             return cls.from_deezer(album, resp)
-        if source == "yandex":
-            return  cls.from_yandex(album, resp)
         raise Exception
 
     def format_track_path(self, format_string: str) -> str:

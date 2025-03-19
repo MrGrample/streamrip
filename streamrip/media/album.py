@@ -80,7 +80,6 @@ class PendingAlbum(Pending):
             album_folder,
             meta.covers,
             self.config.session.artwork,
-            self.config,
             for_playlist=False,
         )
         pending_tracks = [

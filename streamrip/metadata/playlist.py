@@ -93,12 +93,6 @@ class PlaylistMetadata:
         return cls(name, tracks)
 
     @classmethod
-    def from_yandex(cls, resp: dict):
-        name = typed(resp["title"], str)
-        tracks = [str(track["id"]) for track in resp["tracks"]]
-        return cls(name, tracks)
-
-    @classmethod
     def from_tidal(cls, resp: dict):
         name = typed(resp["title"], str)
         tracks = [str(track["id"]) for track in resp["tracks"]]
@@ -122,7 +116,5 @@ class PlaylistMetadata:
             return cls.from_deezer(resp)
         elif source == "tidal":
             return cls.from_tidal(resp)
-        elif source == "yandex":
-            return cls.from_yandex(resp)
         else:
             raise NotImplementedError(source)

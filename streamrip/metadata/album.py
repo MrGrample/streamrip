@@ -368,77 +368,6 @@ class AlbumMetadata:
         )
 
     @classmethod
-    def from_yandex(cls, resp: dict) -> AlbumMetadata | None:
-
-        item_id = str(resp.get("id"))
-        quality = 2
-
-        if(resp["content_warning"] is not None):
-            if ("explicit" == typed(resp.get('content_warning', ""), str)):
-                explicit = True
-            else:
-                explicit = False
-        else:
-            explicit = None
-
-        sampling_rate = 44.1
-        bit_depth = 16
-
-        album = resp.get('title', "Unknown Album")
-
-        artists = typed(resp.get("artists", []), list)
-        albumartist = ", ".join(a["name"] for a in artists)
-        if not albumartist:
-            albumartist = typed(safe_get(resp, "artist", "name", default=""), str)
-
-        if (resp['year'] is not None):
-            year = str(typed(resp.get('year'), int))
-        else:
-            year = None
-
-        genre: list[str] = []
-        genre.append(typed(resp.get('genre'), str))
-
-        covers = Covers.from_yandex(resp)
-        if covers is None:
-            covers = Covers()
-
-        tracktotal = resp.get('track_count')
-
-       # print(resp)
-
-        info = AlbumInfo(
-            id=item_id,
-            quality=quality,
-            container="MP3",
-            label=None,
-            explicit=explicit,
-            sampling_rate=sampling_rate,
-            bit_depth=bit_depth,
-            booklets=None,
-        )
-        return AlbumMetadata(
-            info,
-            album,
-            albumartist,
-            year,
-            genre=genre,
-            covers=covers,
-            albumcomposer=None,
-            comment=None,
-            compilation=None,
-            copyright=None,
-            date=None,
-            description=None,
-            disctotal=0, #TODO
-            encoder=None,
-            grouping=None,
-            lyrics=None,
-            purchase_date=None,
-            tracktotal=tracktotal,
-        )
-
-    @classmethod
     def from_tidal_playlist_track_resp(cls, resp: dict) -> AlbumMetadata | None:
         album_resp = resp["album"]
         streamable = resp.get("allowStreaming", False)
@@ -568,8 +497,6 @@ class AlbumMetadata:
     def from_track_resp(cls, resp: dict, source: str) -> AlbumMetadata | None:
         if source == "qobuz":
             return cls.from_qobuz(resp["album"])
-        if source == "yandex":
-            return cls.from_yandex(resp['yandex.track_metadata']['albums'][0])
         if source == "tidal":
             return cls.from_tidal_playlist_track_resp(resp)
         if source == "soundcloud":
@@ -586,8 +513,6 @@ class AlbumMetadata:
             return cls.from_qobuz(resp)
         if source == "tidal":
             return cls.from_tidal(resp)
-        if source == "yandex":
-            return cls.from_yandex(resp)
         if source == "soundcloud":
             return cls.from_soundcloud(resp)
         if source == "deezer":

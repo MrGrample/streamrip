@@ -43,9 +43,7 @@ class DeezerClient(Client):
 
     async def login(self):
         # Used for track downloads
-        self.session = await self.get_session(
-            verify_ssl=self.global_config.session.downloads.verify_ssl
-        )
+        self.session = await self.get_session()
         arl = self.config.arl
         if not arl:
             raise MissingCredentialsError

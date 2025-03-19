@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "streamrip"
-version = "2.1.0"
-description = "A fast, all-in-one music downloader for Qobuz, Deezer, Tidal, and SoundCloud"
+version = "2.0.5"
+description = "A fast, all-in-one music ripper for Qobuz, Deezer, Tidal, and SoundCloud"
 authors = ["nathom <nathanthomas707@gmail.com>"]
 license = "GPL-3.0-only"
 readme = "README.md"
@@ -45,7 +45,6 @@ pandas = "^2.2.3"
 pydub = "^0.25.1"
 tqdm = "^4.67.1"
 pyyaml = "^6.0.2"
-certifi = { version = "^2025.1.31", optional = true }
 
 [tool.poetry.urls]
 "Bug Reports" = "https://github.com/nathom/streamrip/issues"
@@ -96,6 +95,3 @@ skip-magic-trailing-comma = false
 
 # Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
-
-[tool.poetry.extras]
-ssl = ["certifi"]

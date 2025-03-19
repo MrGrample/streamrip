@@ -27,9 +27,6 @@ from .prompter import get_prompter
 
 logger = logging.getLogger("streamrip")
 
-if platform.system() == "Windows":
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
 
 class Main:
     """Provides all of the functionality called into by the CLI.
@@ -165,21 +162,7 @@ class Main:
 
     async def rip(self):
         """Download all resolved items."""
-        results = await asyncio.gather(
-            *[item.rip() for item in self.media], return_exceptions=True
-        )
-
-        failed_items = 0
-        for result in results:
-            if isinstance(result, Exception):
-                logger.error(f"Error processing media item: {result}")
-                failed_items += 1
-
-        if failed_items > 0:
-            total_items = len(self.media)
-            logger.info(
-                f"Download completed with {failed_items} failed items out of {total_items} total items."
-            )
+        await asyncio.gather(*[item.rip() for item in self.media])
 
     async def search_interactive(self, source: str, media_type: str, query: str):
         client = await self.get_logged_in_client(source)

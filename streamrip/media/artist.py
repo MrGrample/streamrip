@@ -98,10 +98,9 @@ class Artist(Media):
         return list(_albums)
 
     # Will not fail on any nonempty string
-    _essence_re = re.compile(r"([^\(\[]+)(?:\s*[\(\[][^\)][\)\]])*")
+    _essence = re.compile(r"([^\(]+)(?:\s*[\(\[][^\)][\)\]])*")
 
-    @classmethod
-    def _filter_repeats(cls, albums: list[Album]) -> list[Album]:
+    def _filter_repeats(self, albums: list[Album]) -> list[Album]:
         """When there are different versions of an album on the artist,
         choose the one with the best quality.
 
@@ -110,35 +109,33 @@ class Artist(Media):
         """
         groups: dict[str, list[Album]] = {}
         for a in albums:
-            match = cls._essence_re.match(a.meta.album)
+            match = self._essence.match(a.meta.album)
             assert match is not None
             title = match.group(1).strip().lower()
             items = groups.get(title, [])
             items.append(a)
             groups[title] = items
 
-        unique_albums: list[Album] = []
+        ret: list[Album] = []
         for group in groups.values():
-            # Move explicit versions to the beginning
-            group = sorted(
-                group,
-                key=lambda album: album.meta.info.explicit,
-                reverse=True,
-            )
-            group = sorted(
-                group,
-                key=lambda album: album.meta.info.sampling_rate or 0,
-                reverse=True,
-            )
-            group = sorted(
-                group,
-                key=lambda album: album.meta.info.bit_depth or 0,
-                reverse=True,
-            )
-            # group guaranteed to be nonempty
-            unique_albums.append(group[0])
+            best = None
+            max_bd, max_sr = 0, 0
+            # assume that highest bd is always with highest sr
+            for album in group:
+                bd = album.meta.info.bit_depth or 0
+                if bd > max_bd:
+                    max_bd = bd
+                    best = album
 
-        return unique_albums
+                sr = album.meta.info.sampling_rate or 0
+                if sr > max_sr:
+                    max_sr = sr
+                    best = album
+
+            assert best is not None  # true because all g != []
+            ret.append(best)
+
+        return ret
 
     _extra_re = re.compile(
         r"(?i)(anniversary|deluxe|live|collector|demo|expanded|remix)"

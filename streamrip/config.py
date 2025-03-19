@@ -73,6 +73,11 @@ class DeezerConfig:
     # back to deezloader, which is unreliable
     deezloader_warnings: bool
 
+@dataclass(slots=True)
+class YandexConfig:
+    # Access токен для Yandex Music.
+    access_token: str
+    quality: int
 
 @dataclass(slots=True)
 class SoundcloudConfig:
@@ -201,6 +206,7 @@ class DownloadsConfig:
     # Verify SSL certificates for API connections
     # Set to false if you encounter SSL certificate verification errors (not recommended)
     verify_ssl: bool
+    proxy: str
 
 
 @dataclass(slots=True)
@@ -251,6 +257,7 @@ class ConfigData:
     soundcloud: SoundcloudConfig
     youtube: YoutubeConfig
     lastfm: LastFmConfig
+    yandex: YandexConfig
 
     filepaths: FilepathsConfig
     artwork: ArtworkConfig
@@ -278,6 +285,7 @@ class ConfigData:
         qobuz = QobuzConfig(**toml["qobuz"])  # type: ignore
         tidal = TidalConfig(**toml["tidal"])  # type: ignore
         deezer = DeezerConfig(**toml["deezer"])  # type: ignore
+        yandex = YandexConfig(**toml["yandex"])  # type: ignore
         soundcloud = SoundcloudConfig(**toml["soundcloud"])  # type: ignore
         youtube = YoutubeConfig(**toml["youtube"])  # type: ignore
         lastfm = LastFmConfig(**toml["lastfm"])  # type: ignore
@@ -296,6 +304,7 @@ class ConfigData:
             qobuz=qobuz,
             tidal=tidal,
             deezer=deezer,
+            yandex=yandex,
             soundcloud=soundcloud,
             youtube=youtube,
             lastfm=lastfm,
@@ -326,6 +335,7 @@ class ConfigData:
         update_toml_section_from_config(self.toml["qobuz"], self.qobuz)
         update_toml_section_from_config(self.toml["tidal"], self.tidal)
         update_toml_section_from_config(self.toml["deezer"], self.deezer)
+        update_toml_section_from_config(self.toml["yandex"], self.yandex)
         update_toml_section_from_config(self.toml["soundcloud"], self.soundcloud)
         update_toml_section_from_config(self.toml["youtube"], self.youtube)
         update_toml_section_from_config(self.toml["lastfm"], self.lastfm)
@@ -340,12 +350,13 @@ class ConfigData:
     def get_source(
         self,
         source: str,
-    ) -> QobuzConfig | DeezerConfig | SoundcloudConfig | TidalConfig:
+    ) -> QobuzConfig | DeezerConfig | SoundcloudConfig | TidalConfig | YandexConfig:
         d = {
             "qobuz": self.qobuz,
             "deezer": self.deezer,
             "soundcloud": self.soundcloud,
             "tidal": self.tidal,
+            "yandex": self.yandex
         }
         res = d.get(source)
         if res is None:

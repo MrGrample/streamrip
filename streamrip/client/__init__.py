@@ -4,6 +4,7 @@ from .downloadable import BasicDownloadable, Downloadable
 from .qobuz import QobuzClient
 from .soundcloud import SoundcloudClient
 from .tidal import TidalClient
+from .yandex import YandexClient
 
 __all__ = [
     "Client",
@@ -13,4 +14,5 @@ __all__ = [
     "SoundcloudClient",
     "Downloadable",
     "BasicDownloadable",
+    "YandexClient"
 ]

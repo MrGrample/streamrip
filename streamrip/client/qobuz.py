@@ -152,6 +152,7 @@ class QobuzClient(Client):
             config.session.downloads.requests_per_minute,
         )
         self.secret: Optional[str] = None
+        self.proxy = config.session.downloads.proxy
 
     async def login(self):
         self.session = await self.get_session(
@@ -179,7 +180,7 @@ class QobuzClient(Client):
             f.set_modified()
 
         self.session.headers.update({"X-App-Id": str(c.app_id)})
-
+        
         if c.use_auth_token:
             params = {
                 "user_id": c.email_or_userid,
@@ -336,7 +337,7 @@ class QobuzClient(Client):
             raise NonStreamableError
 
         return BasicDownloadable(
-            self.session, stream_url, "flac" if quality > 1 else "mp3", source="qobuz"
+            self.session, stream_url, "flac" if quality > 1 else "mp3", source="qobuz", proxy=self.proxy
         )
 
     async def _paginate(
@@ -410,8 +411,8 @@ class QobuzClient(Client):
 
     async def _get_valid_secret(self, secrets: list[str]) -> str:
         results = await asyncio.gather(
-            *[self._test_secret(secret) for secret in secrets],
-        )
+                *[self._test_secret(secret) for secret in secrets],
+                )
         working_secrets = [r for r in results if r is not None]
         if len(working_secrets) == 0:
             raise InvalidAppSecretError(secrets)
@@ -446,7 +447,7 @@ class QobuzClient(Client):
         url = f"{QOBUZ_BASE_URL}/{epoint}"
         logger.debug("api_request: endpoint=%s, params=%s", epoint, params)
         async with self.rate_limiter:
-            async with self.session.get(url, params=params) as response:
+            async with self.session.get(url, params=params, proxy=self.proxy) as response:
                 return response.status, await response.json()
 
     @staticmethod

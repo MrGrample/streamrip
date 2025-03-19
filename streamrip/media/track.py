@@ -197,6 +197,7 @@ class PendingSingle(Pending):
             logger.error(f"Error fetching track {self.id}: {e}")
             return None
         # Patch for soundcloud
+
         try:
             album = AlbumMetadata.from_track_resp(resp, self.client.source)
         except Exception as e:
@@ -263,6 +264,7 @@ class PendingSingle(Pending):
             folder,
             covers,
             self.config.session.artwork,
+            config_all=self.config,
             for_playlist=False,
         )
         return embed_path

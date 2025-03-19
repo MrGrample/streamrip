@@ -87,6 +87,15 @@ class Covers:
         return c
 
     @classmethod
+    def from_yandex(cls, resp):
+        c = cls()
+        uri = resp['cover_uri']
+        size = "400x400"
+        cover_url = f'https://{uri.replace("%%", size)}'
+        c.set_cover_url("large", cover_url)
+        return c
+
+    @classmethod
     def from_tidal(cls, resp):
         uuid = resp["cover"]
         if not uuid:

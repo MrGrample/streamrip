@@ -204,6 +204,9 @@ class DownloadsConfig:
     max_connections: int
     requests_per_minute: int
     proxy: str
+    # Verify SSL certificates for API connections
+    # Set to false if you encounter SSL certificate verification errors (not recommended)
+    verify_ssl: bool
 
 
 @dataclass(slots=True)
